@@ -1,21 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { DEFAULT_SETTINGS, type AppData, type Client, type Payment, type Settings } from '@/lib/types';
+import { DEFAULT_SETTINGS, type AppData, type Customer, type Entry, type Settings } from '@/lib/types';
 
-const STORAGE_KEY = 'cobrei:data:v1';
+const STORAGE_KEY = 'caderninho:data:v1';
 
-const EMPTY_DATA: AppData = { clients: [], payments: [], settings: DEFAULT_SETTINGS };
+const EMPTY_DATA: AppData = { customers: [], entries: [], settings: DEFAULT_SETTINGS };
 
-export type ClientInput = Omit<Client, 'id' | 'createdAt' | 'active'>;
+export type CustomerInput = Omit<Customer, 'id' | 'createdAt'>;
+export type EntryInput = Omit<Entry, 'id' | 'createdAt'>;
 
 interface Store extends AppData {
   ready: boolean;
-  addClient: (input: ClientInput) => Client;
-  updateClient: (id: string, changes: Partial<Client>) => void;
-  deleteClient: (id: string) => void;
-  markPaid: (client: Client, month: string) => void;
-  undoPayment: (paymentId: string) => void;
+  addCustomer: (input: CustomerInput) => Customer;
+  updateCustomer: (id: string, changes: Partial<CustomerInput>) => void;
+  deleteCustomer: (id: string) => void;
+  addEntry: (input: EntryInput) => Entry;
+  deleteEntry: (id: string) => void;
   saveSettings: (settings: Settings) => void;
 }
 
@@ -35,8 +36,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (!raw) return;
         const saved = JSON.parse(raw) as Partial<AppData>;
         setData({
-          clients: saved.clients ?? [],
-          payments: saved.payments ?? [],
+          customers: saved.customers ?? [],
+          entries: saved.entries ?? [],
           settings: { ...DEFAULT_SETTINGS, ...saved.settings },
         });
       })
@@ -51,40 +52,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
   }, [data, ready]);
 
-  const addClient = useCallback((input: ClientInput) => {
-    const client: Client = { ...input, id: newId(), active: true, createdAt: new Date().toISOString() };
-    setData((d) => ({ ...d, clients: [...d.clients, client] }));
-    return client;
+  const addCustomer = useCallback((input: CustomerInput) => {
+    const customer: Customer = { ...input, id: newId(), createdAt: new Date().toISOString() };
+    setData((d) => ({ ...d, customers: [...d.customers, customer] }));
+    return customer;
   }, []);
 
-  const updateClient = useCallback((id: string, changes: Partial<Client>) => {
-    setData((d) => ({ ...d, clients: d.clients.map((c) => (c.id === id ? { ...c, ...changes } : c)) }));
+  const updateCustomer = useCallback((id: string, changes: Partial<CustomerInput>) => {
+    setData((d) => ({ ...d, customers: d.customers.map((c) => (c.id === id ? { ...c, ...changes } : c)) }));
   }, []);
 
-  const deleteClient = useCallback((id: string) => {
+  const deleteCustomer = useCallback((id: string) => {
     setData((d) => ({
       ...d,
-      clients: d.clients.filter((c) => c.id !== id),
-      payments: d.payments.filter((p) => p.clientId !== id),
+      customers: d.customers.filter((c) => c.id !== id),
+      entries: d.entries.filter((e) => e.customerId !== id),
     }));
   }, []);
 
-  const markPaid = useCallback((client: Client, month: string) => {
-    setData((d) => {
-      if (d.payments.some((p) => p.clientId === client.id && p.month === month)) return d;
-      const payment: Payment = {
-        id: newId(),
-        clientId: client.id,
-        month,
-        amount: client.amount,
-        paidAt: new Date().toISOString(),
-      };
-      return { ...d, payments: [...d.payments, payment] };
-    });
+  const addEntry = useCallback((input: EntryInput) => {
+    const entry: Entry = { ...input, id: newId(), createdAt: new Date().toISOString() };
+    setData((d) => ({ ...d, entries: [...d.entries, entry] }));
+    return entry;
   }, []);
 
-  const undoPayment = useCallback((paymentId: string) => {
-    setData((d) => ({ ...d, payments: d.payments.filter((p) => p.id !== paymentId) }));
+  const deleteEntry = useCallback((id: string) => {
+    setData((d) => ({ ...d, entries: d.entries.filter((e) => e.id !== id) }));
   }, []);
 
   const saveSettings = useCallback((settings: Settings) => {
@@ -92,8 +85,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<Store>(
-    () => ({ ...data, ready, addClient, updateClient, deleteClient, markPaid, undoPayment, saveSettings }),
-    [data, ready, addClient, updateClient, deleteClient, markPaid, undoPayment, saveSettings],
+    () => ({
+      ...data,
+      ready,
+      addCustomer,
+      updateCustomer,
+      deleteCustomer,
+      addEntry,
+      deleteEntry,
+      saveSettings,
+    }),
+    [data, ready, addCustomer, updateCustomer, deleteCustomer, addEntry, deleteEntry, saveSettings],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

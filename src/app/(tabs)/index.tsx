@@ -1,90 +1,135 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 
-import { ChargeRow } from '@/components/ChargeRow';
-import { UpdateBanner } from '@/components/UpdateBanner';
 import { Button, Card, colors, EmptyState, styles } from '@/components/ui';
-import { chargesForMonth, monthKey, shiftMonth, summarize } from '@/lib/billing';
-import { formatCurrency, formatMonth } from '@/lib/format';
-import { pixConfigured } from '@/lib/reminder';
+import { UpdateBanner } from '@/components/UpdateBanner';
+import { formatCurrency, formatDebtAge } from '@/lib/format';
+import { customerStatuses, daysSince, overview, type CustomerStatus } from '@/lib/ledger';
 import { useStore } from '@/state/store';
 
-function Stat({ label, value, color }: { label: string; value: number; color: string }) {
+function debtColor(days: number): string {
+  if (days > 30) return colors.danger;
+  if (days > 15) return colors.warning;
+  return colors.text;
+}
+
+function CustomerRow({ status }: { status: CustomerStatus }) {
+  const { customer, balance, since } = status;
+  const days = since ? daysSince(since) : 0;
   return (
-    <Card style={{ flex: 1, padding: 12, gap: 4 }}>
-      <Text style={styles.muted}>{label}</Text>
-      <Text style={{ fontSize: 16, fontWeight: '700', color }}>{formatCurrency(value)}</Text>
-    </Card>
+    <Pressable onPress={() => router.push(`/cliente/${customer.id}`)}>
+      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={styles.subtitle}>{customer.name}</Text>
+          {balance > 0 && since ? (
+            <Text style={[styles.muted, { color: debtColor(days) }]}>{formatDebtAge(days)}</Text>
+          ) : (
+            <Text style={[styles.muted, { color: colors.success }]}>
+              {balance < 0 ? `Crédito de ${formatCurrency(-balance)}` : 'Em dia'}
+            </Text>
+          )}
+        </View>
+        {balance > 0 ? (
+          <Text style={{ fontSize: 16, fontWeight: '700', color: debtColor(days) }}>{formatCurrency(balance)}</Text>
+        ) : null}
+        <Pressable
+          accessibilityLabel={`Anotar compra de ${customer.name}`}
+          hitSlop={8}
+          onPress={() => router.push({ pathname: '/lancar', params: { customerId: customer.id, type: 'compra' } })}
+          style={({ pressed }) => [
+            {
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: colors.primary,
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}>
+          <Text style={{ color: colors.primaryText, fontSize: 22, fontWeight: '700', marginTop: -2 }}>+</Text>
+        </Pressable>
+      </Card>
+    </Pressable>
   );
 }
 
-export default function Dashboard() {
-  const { clients, payments, settings, ready } = useStore();
-  const [month, setMonth] = useState(() => monthKey(new Date()));
+export default function Notebook() {
+  const { customers, entries, ready } = useStore();
+  const [query, setQuery] = useState('');
 
-  const charges = useMemo(() => chargesForMonth(clients, payments, month), [clients, payments, month]);
-  const summary = useMemo(() => summarize(charges), [charges]);
-  const expected = summary.received + summary.pending + summary.overdue;
-  const progress = expected > 0 ? summary.received / expected : 0;
+  const statuses = useMemo(() => customerStatuses(customers, entries), [customers, entries]);
+  const summary = useMemo(() => overview(customers, entries), [customers, entries]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return statuses;
+    const digits = q.replace(/\D/g, '');
+    return statuses.filter(
+      (s) => s.customer.name.toLowerCase().includes(q) || (digits !== '' && s.customer.phone.includes(digits)),
+    );
+  }, [statuses, query]);
 
   if (!ready) return <View style={styles.screen} />;
 
-  return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+  const header = (
+    <View style={{ gap: 12 }}>
       <UpdateBanner />
-
-      <View style={[styles.row, { justifyContent: 'space-between' }]}>
-        <Pressable hitSlop={12} onPress={() => setMonth((m) => shiftMonth(m, -1))}>
-          <Text style={{ fontSize: 24, color: colors.primary }}>‹</Text>
-        </Pressable>
-        <Text style={[styles.title, { textTransform: 'capitalize' }]}>{formatMonth(month)}</Text>
-        <Pressable hitSlop={12} onPress={() => setMonth((m) => shiftMonth(m, 1))}>
-          <Text style={{ fontSize: 24, color: colors.primary }}>›</Text>
-        </Pressable>
-      </View>
-
+      <Card style={{ backgroundColor: colors.primary, borderColor: colors.primary }}>
+        <Text style={{ color: colors.primaryText, opacity: 0.85 }}>Dinheiro na rua</Text>
+        <Text style={{ color: colors.primaryText, fontSize: 32, fontWeight: '800' }}>
+          {formatCurrency(summary.outstanding)}
+        </Text>
+        <Text style={{ color: colors.primaryText, opacity: 0.85 }}>
+          {summary.debtors === 0
+            ? 'Ninguém devendo'
+            : summary.debtors === 1
+              ? '1 cliente devendo'
+              : `${summary.debtors} clientes devendo`}
+        </Text>
+      </Card>
       <View style={styles.row}>
-        <Stat label="Recebido" value={summary.received} color={colors.success} />
-        <Stat label="A vencer" value={summary.pending} color={colors.warning} />
-        <Stat label="Atrasado" value={summary.overdue} color={colors.danger} />
+        <Card style={{ flex: 1, padding: 12, gap: 2 }}>
+          <Text style={styles.muted}>Fiado no mês</Text>
+          <Text style={[styles.subtitle, { color: colors.warning }]}>{formatCurrency(summary.soldThisMonth)}</Text>
+        </Card>
+        <Card style={{ flex: 1, padding: 12, gap: 2 }}>
+          <Text style={styles.muted}>Recebido no mês</Text>
+          <Text style={[styles.subtitle, { color: colors.success }]}>{formatCurrency(summary.receivedThisMonth)}</Text>
+        </Card>
       </View>
-
-      {expected > 0 ? (
-        <Card>
-          <Text style={styles.muted}>
-            {Math.round(progress * 100)}% recebido de {formatCurrency(expected)} · {summary.paidCount} de{' '}
-            {charges.length} clientes
-          </Text>
-          <View style={{ height: 8, borderRadius: 4, backgroundColor: colors.border, overflow: 'hidden' }}>
-            <View style={{ width: `${progress * 100}%`, height: 8, backgroundColor: colors.success }} />
-          </View>
-        </Card>
+      {customers.length > 0 ? (
+        <TextInput
+          style={styles.input}
+          placeholder="Buscar cliente"
+          placeholderTextColor={colors.muted}
+          value={query}
+          onChangeText={setQuery}
+        />
       ) : null}
+      <Button title="+ Novo cliente" variant={customers.length ? 'secondary' : 'primary'} onPress={() => router.push('/cliente/novo')} />
+    </View>
+  );
 
-      {!pixConfigured(settings) ? (
-        <Card style={{ backgroundColor: colors.warningBg, borderColor: colors.warningBg }}>
-          <Text style={styles.subtitle}>Configure sua chave Pix</Text>
-          <Text style={styles.text}>
-            Com a chave cadastrada, cada cobrança vai com o Pix copia e cola e o QR Code no valor certo.
-          </Text>
-          <Button title="Configurar agora" onPress={() => router.push('/ajustes')} />
-        </Card>
-      ) : null}
-
-      {clients.length === 0 ? (
-        <Card>
+  return (
+    <FlatList
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      data={filtered}
+      keyExtractor={(s) => s.customer.id}
+      keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={header}
+      ListEmptyComponent={
+        customers.length ? (
+          <EmptyState title="Nenhum cliente encontrado" description="Tente outro nome." />
+        ) : (
           <EmptyState
-            title="Comece cadastrando seus clientes"
-            description="Informe o valor e o dia do vencimento. O Cobrei avisa quem está devendo e manda a cobrança pelo WhatsApp."
+            title="Seu caderno de fiado, sem papel"
+            description="Cadastre quem compra fiado. Cada compra anotada vai na hora para o WhatsApp do cliente, com o saldo atualizado."
           />
-          <Button title="Cadastrar primeiro cliente" onPress={() => router.push('/cliente/novo')} />
-        </Card>
-      ) : charges.length === 0 ? (
-        <EmptyState title="Nenhuma cobrança neste mês" description="Não há clientes ativos para este período." />
-      ) : (
-        charges.map((charge) => <ChargeRow key={charge.client.id} charge={charge} />)
-      )}
-    </ScrollView>
+        )
+      }
+      renderItem={({ item }) => <CustomerRow status={item} />}
+    />
   );
 }

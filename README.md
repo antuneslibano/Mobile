@@ -1,31 +1,27 @@
-# Cobrei
+# Caderninho
 
-App para pequenos negócios que cobram mensalidade (escolinhas, academias pequenas, professores
-particulares, cursos, personal trainers) controlarem quem pagou e cobrarem os atrasados pelo
-WhatsApp, com Pix copia e cola e QR Code no valor certo.
+O caderno de fiado do comércio de bairro, sem papel. Feito para mercadinhos, padarias, açougues,
+bares, lanchonetes e lojinhas que vendem "na caderneta".
 
-## O que o app faz (versão 1)
+## O problema
 
-- **Painel do mês**: quanto já entrou, quanto está a vencer e quanto está atrasado, com a lista de
-  clientes ordenada por urgência.
-- **Clientes**: nome, WhatsApp, valor, dia do vencimento e observações. Mostra quantas mensalidades
-  cada cliente tem em aberto.
-- **Cobrar em um toque**: abre o WhatsApp do cliente com uma mensagem pronta, que pode ser
-  personalizada e já leva o Pix copia e cola.
-- **Pix sem intermediário**: gera o BR Code estático do Banco Central a partir da chave Pix do
-  usuário. O dinheiro cai direto na conta dele e não há taxa nem cadastro em banco.
-- **Histórico**: pagamentos por mês, com opção de desfazer, além de desativar ou excluir clientes.
+O fiado ainda é anotado num caderno de papel, e isso traz problemas conhecidos:
+- "Eu não comprei isso!": sem registro que o cliente tenha visto, a palavra de um vale contra a do outro.
+- Ninguém sabe ao certo quanto dinheiro está na rua, nem quem deve há mais tempo.
+- Na hora de cobrar, é preciso somar tudo na mão, e dá vergonha de pedir.
 
-Os dados ficam salvos no próprio aparelho (AsyncStorage). Ainda não há login nem servidor.
+## O que o Caderninho faz
 
-## Como rodar
+- **Comprovante na hora**: cada compra anotada vai para o WhatsApp do cliente com o valor, os itens e
+  o saldo atualizado. O cliente acompanha a própria conta e não sobra espaço para discussão.
+- **Dinheiro na rua**: o total que os clientes devem, quantos estão devendo e o fiado e o recebido no mês.
+- **Quem deve há mais tempo** aparece primeiro, em amarelo depois de 15 dias e em vermelho depois de 30.
+- **Cobrança com Pix**: o extrato vai pelo WhatsApp com o Pix copia e cola no valor exato da conta, ou o
+  QR Code aparece na tela para o cliente pagar no balcão. O dinheiro cai direto na conta do lojista, sem taxa.
+- **Limite de fiado** por cliente, com aviso antes de passar do limite.
+- **Pagamento parcial ou total**, com extrato e saldo após cada lançamento.
 
-```bash
-npm install
-npm start          # abre o Expo; escaneie o QR Code com o app Expo Go
-npm test           # testes da lógica (Pix, cobranças, formatação, WhatsApp)
-npm run typecheck
-```
+Os dados ficam salvos no próprio celular. Ainda não há login nem servidor.
 
 ## Instalar no celular (APK)
 
@@ -49,11 +45,11 @@ Guarde uma cópia dessa chave: sem ela, as próximas versões não instalam por 
 
 ```
 src/app/            telas (Expo Router)
-  (tabs)/index.tsx  painel do mês
-  (tabs)/clientes   lista de clientes
-  (tabs)/ajustes    chave Pix, dados do negócio e mensagem de cobrança
-  cliente/          cadastro e detalhes do cliente
-  cobrar.tsx        QR Code, copia e cola e envio pelo WhatsApp
+  (tabs)/index.tsx  caderno: dinheiro na rua e lista de clientes
+  (tabs)/ajustes    nome da loja e chave Pix
+  cliente/          cadastro e extrato do cliente
+  lancar.tsx        anotar compra ou receber pagamento (+ comprovante)
+  cobrar.tsx        QR Code, copia e cola e extrato pelo WhatsApp
 src/lib/            regras de negócio puras e testadas
 src/state/store.tsx estado global com persistência local
 tests/              testes com o runner nativo do Node
@@ -61,19 +57,17 @@ tests/              testes com o runner nativo do Node
 
 ## Plano de monetização
 
-| Plano    | Preço sugerido | Limite                                                                   |
-|----------|----------------|--------------------------------------------------------------------------|
-| Grátis   | R$ 0           | até 10 clientes                                                          |
-| Pro      | R$ 29,90/mês   | clientes ilimitados, backup na nuvem, relatórios                         |
-| Negócio  | R$ 59,90/mês   | lembretes automáticos, Pix com baixa automática, vários usuários         |
+| Plano   | Preço sugerido | O que inclui                                                              |
+|---------|----------------|---------------------------------------------------------------------------|
+| Grátis  | R$ 0           | até 15 clientes                                                           |
+| Loja    | R$ 19,90/mês   | clientes ilimitados, backup na nuvem, relatório mensal                    |
+| Loja+   | R$ 39,90/mês   | vários celulares no mesmo caderno, link de extrato online para o cliente  |
 
 ## Próximos passos
 
-1. **Backup e login** (Supabase): sem isso, quem troca de celular perde os dados, e é o principal
-   motivo para pagar.
-2. **Assinatura dentro do app** (RevenueCat, para Google Play e App Store) com o limite do plano
-   grátis.
-3. **Lembretes automáticos**: notificação local no dia do vencimento ("3 clientes vencem hoje").
-4. **Pix com baixa automática** (Asaas, Mercado Pago ou Efí), em que o pagamento confirma sozinho.
-5. **Relatórios**: inadimplência por mês e exportação em PDF/planilha.
+1. **Backup na nuvem e login**: o caderno é o patrimônio da loja e não pode sumir com o celular.
+2. **Link do extrato** que o cliente abre a qualquer hora, sem precisar pedir.
+3. **Vários atendentes** no mesmo caderno, com sincronização entre celulares.
+4. **Lembrete de cobrança** automático para quem deve há mais de X dias.
+5. **Assinatura dentro do app** com o limite do plano grátis.
 6. Publicação na Google Play.

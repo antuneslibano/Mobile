@@ -42,3 +42,13 @@ export function formatPhone(phone: string): string {
   if (digits.length === 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   return phone;
 }
+
+export function formatTime(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+export function formatDebtAge(days: number): string {
+  if (days === 0) return 'Comprou fiado hoje';
+  if (days === 1) return 'Deve desde ontem';
+  return `Deve há ${days} dias`;
+}

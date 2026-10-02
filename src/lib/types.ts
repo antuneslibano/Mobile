@@ -1,23 +1,25 @@
 import type { PixKeyType } from './pix';
 
-export interface Client {
+export interface Customer {
   id: string;
   name: string;
   phone: string;
-  amount: number;
-  dueDay: number;
+  // Limite de fiado em reais; 0 significa sem limite.
+  creditLimit: number;
   notes: string;
-  active: boolean;
   createdAt: string;
 }
 
-// Um pagamento quita a mensalidade de um cliente em um mês ("YYYY-MM").
-export interface Payment {
+export type EntryType = 'compra' | 'pagamento';
+
+// Cada linha do caderno: uma compra fiada ou um pagamento recebido.
+export interface Entry {
   id: string;
-  clientId: string;
-  month: string;
+  customerId: string;
+  type: EntryType;
   amount: number;
-  paidAt: string;
+  description: string;
+  createdAt: string;
 }
 
 export interface Settings {
@@ -26,18 +28,13 @@ export interface Settings {
   pixKeyType: PixKeyType;
   merchantName: string;
   merchantCity: string;
-  reminderTemplate: string;
 }
 
 export interface AppData {
-  clients: Client[];
-  payments: Payment[];
+  customers: Customer[];
+  entries: Entry[];
   settings: Settings;
 }
-
-export const DEFAULT_REMINDER_TEMPLATE =
-  'Olá, {nome}! Tudo bem? Passando para lembrar da mensalidade de {mes} no valor de {valor}, ' +
-  'com vencimento em {vencimento}.\n\n{pix}\n\nObrigado! {empresa}';
 
 export const DEFAULT_SETTINGS: Settings = {
   businessName: '',
@@ -45,5 +42,4 @@ export const DEFAULT_SETTINGS: Settings = {
   pixKeyType: 'cpf_cnpj',
   merchantName: '',
   merchantCity: '',
-  reminderTemplate: DEFAULT_REMINDER_TEMPLATE,
 };

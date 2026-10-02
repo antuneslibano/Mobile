@@ -17,11 +17,7 @@ export default function TabsLayout() {
       }}>
       <Tabs.Screen
         name="index"
-        options={{ title: 'Painel', tabBarIcon: ({ color }) => <TabIcon glyph="◉" color={color} /> }}
-      />
-      <Tabs.Screen
-        name="clientes"
-        options={{ title: 'Clientes', tabBarIcon: ({ color }) => <TabIcon glyph="☰" color={color} /> }}
+        options={{ title: 'Caderninho', tabBarLabel: 'Caderno', tabBarIcon: ({ color }) => <TabIcon glyph="✎" color={color} /> }}
       />
       <Tabs.Screen
         name="ajustes"

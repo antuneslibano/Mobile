@@ -5,66 +5,84 @@ import { Alert, Linking, ScrollView, Share, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { Button, Card, EmptyState, styles } from '@/components/ui';
-import { formatCurrency, formatMonth } from '@/lib/format';
-import { pixForCharge, reminderMessage, reminderUrl } from '@/lib/reminder';
+import { formatCurrency } from '@/lib/format';
+import { balanceOf, entriesFor } from '@/lib/ledger';
+import { chargeMessage, pixFor } from '@/lib/messages';
+import { whatsappUrl } from '@/lib/whatsapp';
 import { useStore } from '@/state/store';
 
 export default function Charge() {
-  const { clientId, month } = useLocalSearchParams<{ clientId: string; month: string }>();
-  const { clients, settings, markPaid } = useStore();
+  const { customerId } = useLocalSearchParams<{ customerId: string }>();
+  const { customers, entries, settings } = useStore();
   const [copied, setCopied] = useState(false);
-  const client = clients.find((c) => c.id === clientId);
+  const customer = customers.find((c) => c.id === customerId);
 
-  if (!client || !month) return <EmptyState title="Cobrança não encontrada" description="" />;
+  if (!customer) return <EmptyState title="Cliente não encontrado" description="" />;
 
-  const pix = pixForCharge(settings, client, month);
+  const own = entriesFor(entries, customer.id);
+  const balance = balanceOf(own);
+  const pix = pixFor(settings, balance, customer);
+  const message = chargeMessage(settings, customer, own);
 
-  async function sendWhatsapp() {
-    try {
-      await Linking.openURL(reminderUrl(settings, client!, month));
-    } catch {
-      // Sem WhatsApp instalado: oferece o compartilhamento padrão do sistema.
-      await Share.share({ message: reminderMessage(settings, client!, month) });
+  async function send() {
+    if (customer!.phone) {
+      try {
+        await Linking.openURL(whatsappUrl(customer!.phone, message));
+        return;
+      } catch {
+        // Sem WhatsApp: cai no compartilhamento padrão.
+      }
     }
-  }
-
-  async function copyPix() {
-    if (!pix) return;
-    await Clipboard.setStringAsync(pix);
-    setCopied(true);
+    await Share.share({ message });
   }
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Card style={{ alignItems: 'center' }}>
-        <Text style={styles.subtitle}>{client.name}</Text>
-        <Text style={[styles.muted, { textTransform: 'capitalize' }]}>{formatMonth(month)}</Text>
-        <Text style={[styles.title, { fontSize: 28 }]}>{formatCurrency(client.amount)}</Text>
+        <Text style={styles.subtitle}>{customer.name}</Text>
+        <Text style={[styles.title, { fontSize: 32 }]}>{formatCurrency(balance)}</Text>
         {pix ? (
-          <View style={{ padding: 12, backgroundColor: '#fff' }}>
-            <QRCode value={pix} size={220} />
-          </View>
+          <>
+            <Text style={styles.muted}>Mostre para o cliente pagar agora pelo app do banco</Text>
+            <View style={{ padding: 12, backgroundColor: '#fff' }}>
+              <QRCode value={pix} size={220} />
+            </View>
+          </>
         ) : (
           <Text style={[styles.muted, { textAlign: 'center' }]}>
-            Cadastre sua chave Pix em Ajustes para gerar o QR Code e o copia e cola.
+            Cadastre sua chave Pix em Ajustes para gerar o QR Code no valor da conta.
           </Text>
         )}
       </Card>
 
-      <Button title="Enviar cobrança no WhatsApp" variant="whatsapp" onPress={sendWhatsapp} />
+      <Button title={customer.phone ? 'Enviar extrato no WhatsApp' : 'Compartilhar extrato'} variant="whatsapp" onPress={send} />
       {pix ? (
-        <Button title={copied ? 'Copiado ✓' : 'Copiar Pix copia e cola'} variant="secondary" onPress={copyPix} />
+        <Button
+          title={copied ? 'Copiado ✓' : 'Copiar Pix copia e cola'}
+          variant="secondary"
+          onPress={async () => {
+            await Clipboard.setStringAsync(pix);
+            setCopied(true);
+          }}
+        />
       ) : (
         <Button title="Configurar Pix" variant="secondary" onPress={() => router.push('/ajustes')} />
       )}
       <Button
-        title="Marcar como pago"
+        title="Cliente pagou"
         onPress={() => {
-          markPaid(client, month);
-          Alert.alert('Pagamento registrado', `${client.name} · ${formatMonth(month)}`);
           router.back();
+          router.push({ pathname: '/lancar', params: { customerId: customer.id, type: 'pagamento' } });
         }}
       />
+      <Text style={[styles.hint, { textAlign: 'center' }]}>
+        O Pix cai direto na sua conta. Depois de conferir no banco, toque em "Cliente pagou".
+      </Text>
+      {!customer.phone ? null : (
+        <Text style={[styles.hint, { textAlign: 'center' }]} onPress={() => Alert.alert('Prévia da mensagem', message)}>
+          Ver prévia da mensagem
+        </Text>
+      )}
     </ScrollView>
   );
 }

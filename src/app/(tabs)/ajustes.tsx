@@ -3,7 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'r
 
 import { Button, Card, Chip, Field, styles } from '@/components/ui';
 import { validatePixKey, type PixKeyType } from '@/lib/pix';
-import { DEFAULT_REMINDER_TEMPLATE, type Settings } from '@/lib/types';
+import type { Settings } from '@/lib/types';
 import { useStore } from '@/state/store';
 
 const KEY_TYPES: { type: PixKeyType; label: string; placeholder: string }[] = [
@@ -43,13 +43,14 @@ export default function SettingsScreen() {
             label="Nome do negócio"
             value={form.businessName}
             onChangeText={(v) => set('businessName', v)}
-            placeholder="Ex.: Escolinha Bola de Ouro"
+            placeholder="Ex.: Mercadinho Bom Preço"
+            hint="Aparece no topo de cada comprovante enviado ao cliente."
           />
         </Card>
 
         <Card>
           <Text style={styles.subtitle}>Recebimento via Pix</Text>
-          <Text style={styles.muted}>O dinheiro cai direto na sua conta. O Cobrei não cobra taxa por Pix.</Text>
+          <Text style={styles.muted}>Gera o QR Code e o Pix copia e cola no valor exato da conta. O dinheiro cai direto na sua conta, sem taxa.</Text>
           <View style={[styles.row, { flexWrap: 'wrap' }]}>
             {KEY_TYPES.map((k) => (
               <Chip
@@ -80,25 +81,6 @@ export default function SettingsScreen() {
             value={form.merchantCity}
             onChangeText={(v) => set('merchantCity', v)}
             placeholder="Ex.: São Paulo"
-          />
-        </Card>
-
-        <Card>
-          <Text style={styles.subtitle}>Mensagem de cobrança</Text>
-          <Text style={styles.muted}>
-            Variáveis: {'{nome}'} {'{mes}'} {'{valor}'} {'{vencimento}'} {'{pix}'} {'{empresa}'}
-          </Text>
-          <Field
-            label="Modelo"
-            value={form.reminderTemplate}
-            onChangeText={(v) => set('reminderTemplate', v)}
-            multiline
-            style={{ minHeight: 140, textAlignVertical: 'top' }}
-          />
-          <Button
-            title="Restaurar mensagem padrão"
-            variant="secondary"
-            onPress={() => set('reminderTemplate', DEFAULT_REMINDER_TEMPLATE)}
           />
         </Card>
 

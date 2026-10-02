@@ -1,20 +1,20 @@
 import { router } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
-import { ClientForm } from '@/components/ClientForm';
+import { CustomerForm } from '@/components/CustomerForm';
 import { styles } from '@/components/ui';
 import { useStore } from '@/state/store';
 
-export default function NewClient() {
-  const { addClient } = useStore();
+export default function NewCustomer() {
+  const { addCustomer } = useStore();
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled">
-        <ClientForm
+        <CustomerForm
           submitLabel="Cadastrar"
           onSubmit={(input) => {
-            addClient(input);
-            router.back();
+            const customer = addCustomer(input);
+            router.replace(`/cliente/${customer.id}`);
           }}
         />
       </ScrollView>

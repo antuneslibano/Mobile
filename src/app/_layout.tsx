@@ -18,6 +18,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="cliente/novo" options={{ title: 'Novo cliente', presentation: 'modal' }} />
         <Stack.Screen name="cliente/[id]" options={{ title: 'Cliente' }} />
+        <Stack.Screen name="lancar" options={{ title: 'Anotar', presentation: 'modal' }} />
         <Stack.Screen name="cobrar" options={{ title: 'Cobrar', presentation: 'modal' }} />
       </Stack>
     </StoreProvider>

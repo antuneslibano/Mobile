@@ -10,8 +10,6 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import type { ChargeStatus } from '@/lib/billing';
-
 export const colors = {
   primary: '#0F766E',
   primaryText: '#FFFFFF',
@@ -91,21 +89,6 @@ export function Chip({ label, selected, onPress }: { label: string; selected: bo
   );
 }
 
-const STATUS_STYLE: Record<ChargeStatus, { label: string; color: string; bg: string }> = {
-  pago: { label: 'Pago', color: colors.success, bg: colors.successBg },
-  pendente: { label: 'A vencer', color: colors.warning, bg: colors.warningBg },
-  atrasado: { label: 'Atrasado', color: colors.danger, bg: colors.dangerBg },
-};
-
-export function StatusBadge({ status }: { status: ChargeStatus }) {
-  const style = STATUS_STYLE[status];
-  return (
-    <View style={[styles.badge, { backgroundColor: style.bg }]}>
-      <Text style={[styles.badgeText, { color: style.color }]}>{style.label}</Text>
-    </View>
-  );
-}
-
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
     <View style={styles.empty}>
@@ -162,8 +145,6 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   chipText: { fontSize: 13, color: colors.text, fontWeight: '500' },
-  badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
-  badgeText: { fontSize: 12, fontWeight: '700' },
   empty: { alignItems: 'center', padding: 32, gap: 6 },
   emptyTitle: { fontSize: 17, fontWeight: '600', color: colors.text, textAlign: 'center' },
   emptyText: { fontSize: 14, color: colors.muted, textAlign: 'center' },
