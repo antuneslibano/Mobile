@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { ChargeRow } from '@/components/ChargeRow';
+import { UpdateBanner } from '@/components/UpdateBanner';
 import { Button, Card, colors, EmptyState, styles } from '@/components/ui';
 import { chargesForMonth, monthKey, shiftMonth, summarize } from '@/lib/billing';
 import { formatCurrency, formatMonth } from '@/lib/format';
@@ -31,6 +32,8 @@ export default function Dashboard() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <UpdateBanner />
+
       <View style={[styles.row, { justifyContent: 'space-between' }]}>
         <Pressable hitSlop={12} onPress={() => setMonth((m) => shiftMonth(m, -1))}>
           <Text style={{ fontSize: 24, color: colors.primary }}>‹</Text>

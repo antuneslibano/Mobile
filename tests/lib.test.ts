@@ -5,6 +5,7 @@ import { chargesForMonth, dueDateFor, openMonthsForClient, shiftMonth, summarize
 import { formatCurrency, parseCurrency } from '../src/lib/format.ts';
 import { buildPixPayload, crc16, validatePixKey } from '../src/lib/pix.ts';
 import type { Client, Payment } from '../src/lib/types.ts';
+import { compareVersions, parseRelease } from '../src/lib/updates.ts';
 import { fillTemplate, whatsappUrl } from '../src/lib/whatsapp.ts';
 
 test('Pix: reproduz o exemplo do manual do BR Code do Banco Central', () => {
@@ -118,4 +119,21 @@ test('WhatsApp: preenche modelo e monta link', () => {
   });
   assert.equal(text, 'Oi Ana, R$ 10,00 {desconhecido}');
   assert.equal(whatsappUrl('(11) 98765-4321', 'oi'), 'https://wa.me/5511987654321?text=oi');
+});
+
+test('Atualizações: compara versões e escolhe o APK do release', () => {
+  assert.ok(compareVersions('1.0.10', '1.0.9') > 0);
+  assert.equal(compareVersions('v1.2.0', '1.2.0'), 0);
+  assert.ok(compareVersions('1.0.0', '1.1') < 0);
+
+  const release = {
+    tag_name: 'v1.1.0',
+    html_url: 'https://github.com/x/y/releases/tag/v1.1.0',
+    draft: false,
+    prerelease: false,
+    assets: [{ name: 'Cobrei-1.1.0.apk', browser_download_url: 'https://example.com/Cobrei-1.1.0.apk' }],
+  };
+  assert.equal(parseRelease(release, '1.0.0')?.downloadUrl, 'https://example.com/Cobrei-1.1.0.apk');
+  assert.equal(parseRelease(release, '1.1.0'), null);
+  assert.equal(parseRelease({ ...release, prerelease: true }, '1.0.0'), null);
 });

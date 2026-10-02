@@ -27,6 +27,24 @@ npm test           # testes da lógica (Pix, cobranças, formatação, WhatsApp)
 npm run typecheck
 ```
 
+## Instalar no celular (APK)
+
+Baixe o arquivo `.apk` mais recente em
+[Releases](https://github.com/antuneslibano/Mobile/releases/latest) pelo celular e abra-o. O app
+avisa sozinho quando sai uma versão nova, e basta instalar por cima: os dados continuam salvos.
+
+### Publicar uma nova versão
+
+```bash
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+O workflow `.github/workflows/release-android.yml` compila o APK, assina e publica o Release.
+Também dá para rodá-lo pela aba **Actions** em *Release Android*, em *Run workflow*.
+
+O APK é assinado com a chave dos secrets `ANDROID_KEYSTORE_BASE64` e `ANDROID_KEYSTORE_PASSWORD`.
+Guarde uma cópia dessa chave: sem ela, as próximas versões não instalam por cima da atual.
+
 ## Estrutura
 
 ```
@@ -58,4 +76,4 @@ tests/              testes com o runner nativo do Node
 3. **Lembretes automáticos**: notificação local no dia do vencimento ("3 clientes vencem hoje").
 4. **Pix com baixa automática** (Asaas, Mercado Pago ou Efí), em que o pagamento confirma sozinho.
 5. **Relatórios**: inadimplência por mês e exportação em PDF/planilha.
-6. Publicação com EAS Build (`npx eas-cli@latest build`).
+6. Publicação na Google Play.
